@@ -51,4 +51,3 @@ def assign_sentiment(score):
     if negative_min <= score <= negative_max:
         return "negative"
     return np.NaN
-
