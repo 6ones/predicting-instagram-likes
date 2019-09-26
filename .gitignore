@@ -115,3 +115,4 @@ venv.bak/
 !.vscode/extensions.json
 
 
+scraper/service_account_key.json
