@@ -4,7 +4,7 @@ from datetime import datetime
 import instaloader
 from instaloader import Profile
 
-from scraper.text_processing import analyze_sentiment
+from text_processing import analyze_sentiment
 
 loader = instaloader.Instaloader()
 
