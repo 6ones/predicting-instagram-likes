@@ -4,18 +4,22 @@ from datetime import datetime
 import instaloader
 from instaloader import Profile
 
+from scraper.text_processing import analyze_sentiment
+
 loader = instaloader.Instaloader()
 
 account = "instablog9ja"
 profile = Profile.from_username(loader.context, account)
 no_of_followers = profile.followers
+no_of_followees = profile.followees
 posts = profile.get_posts()
 
 """
 Explanatory Variables:
 
-    Days Posted
+    Hours Since Posted
     Time Posted
+    Day Posted
     isAd
     Number of mentions
     Number of hashtags
@@ -25,6 +29,8 @@ Explanatory Variables:
     Video view ratio/number of days since it was posted
     Like ratio/number of days since it was posted
     Comment ratio/number of days since it was posted
+    noOfFollowees
+    noOfFollowers
 """
 
 count = 0
@@ -33,7 +39,9 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
     fieldnames = [
         "HoursPosted",
         "timePosted 24hr",
+        "day posted",
         "mediatype",
+        "sentiment",
         "likes",
         "isAd",
         "comments",
@@ -44,6 +52,7 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
         "noOfHashtags",
         "noOfMentions",
         "noOfFollowers",
+        "noOfFollowees",
     ]
 
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
@@ -53,6 +62,10 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
         try:
             mediatype = post.typename
             time_posted = post.date_local.strftime("%-H").strip()
+            day_posted = post.date_local.strftime("%A").strip()
+
+            # This is to be consumed by Google Cloud NLP
+            caption = post.caption
 
             now = datetime.now()
             post_date = post.date_local
@@ -83,42 +96,70 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
 
             # Check for ads
             ad = False
-            if "link" in post.caption:
+            if "link" in caption:
                 ad = True
-            if "Link" in post.caption:
+            if "Link" in caption:
                 ad = True
-            if "contact us" in post.caption:
+            if "contact us" in caption:
                 ad = True
-            if "Contact Us" in post.caption:
+            if "Contact Us" in caption:
                 ad = True
-            if "Contact us" in post.caption:
+            if "Contact us" in caption:
                 ad = True
-            if "call" in post.caption:
+            if "call" in caption:
                 ad = True
-            if "Call" in post.caption:
+            if "Call" in caption:
                 ad = True
-            if "+234" in post.caption:
+            if "+234" in caption:
                 ad = True
-            if "Follow IG" in post.caption:
+            if "Follow IG" in caption:
                 ad = True
-            if "follow" in post.caption:
+            if "follow" in caption:
                 ad = True
-            if "Visit" in post.caption:
+            if "Visit" in caption:
                 ad = True
-            if "visit" in post.caption:
+            if "visit" in caption:
                 ad = True
-            if "SHOP" in post.caption:
+            if "SHOP" in caption:
                 ad = True
-            if "shop" in post.caption:
+            if "shop" in caption:
+                ad = True
+            if "wat" in caption:
+                ad = True
+            if "on Android" in caption:
+                ad = True
+            if "Exclusive" in caption:
+                ad = True
+            if "exclusive" in caption:
+                ad = True
+            if "coming soon" in caption:
+                ad = True
+            if "Coming soon" in caption:
+                ad = True
+            if "Catch us" in caption:
+                ad = True
+            if "Download" in caption:
+                ad = True
+            if "download" in caption:
                 ad = True
 
+            # Large likes usually suggest not ads, set threshold at 5000
             if likes > 5000:
-                ad = False  # Large likes usually suggest not ads
+                ad = False
 
-            if "Kindly follow" in post.caption:
+            if "Kindly follow" in caption:
                 ad = True
-            if "kindly follow" in post.caption:
+            if "kindly follow" in caption:
                 ad = True
+            if "Follow us" in caption:
+                ad = True
+            if "follow us" in caption:
+                ad = True
+
+            # sentiment analysis
+            sentiment = analyze_sentiment(caption)
+            print(caption)
+            print("\n\tSentiment: ", sentiment, "\n")
 
             count += 1
             print("{}\t: Write this : {}".format(count, post.shortcode))
@@ -128,7 +169,9 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
                     "isAd": ad,
                     "HoursPosted": no_of_hours_posted,
                     "timePosted 24hr": time_posted,
+                    "day posted": day_posted,
                     "mediatype": mediatype,
+                    "sentiment": sentiment,
                     "likes": post.likes,
                     "comments": post.comments,
                     "views": video_view_count,
@@ -138,10 +181,14 @@ with open("{}.csv".format(account), "w", newline="") as csv_file:
                     "noOfHashtags": no_of_hashtags,
                     "noOfMentions": no_of_mentions,
                     "noOfFollowers": no_of_followers,
+                    "noOfFollowees": no_of_followees,
                 }
             )
 
         except TypeError as e:
             print("An error here: ", e)
+        except KeyboardInterrupt:
+            print("Script ended by keyboard")
+            break
         except:
             print("Breaking for a reason unknown")
