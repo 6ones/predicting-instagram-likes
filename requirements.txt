@@ -12,7 +12,7 @@ googleapis-common-protos==1.6.0
 grpcio==1.21.1
 idna==2.8
 instaloader==4.2.8
-numpy==1.17.2
+numpy==1.22.0
 pbr==5.2.1
 protobuf==3.8.0
 pyasn1==0.4.5
